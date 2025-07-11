@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nirakar Attendance - Advanced</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #fffbea;
+    color: #2f4f2f;
+    display: flex;
+    min-height: 100vh;
+  }
+  #sidebar {
+    background: #3a6b35;
+    color: #d0f0c0;
+    width: 240px;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+  #sidebar h1 {
+    font-size: 1.6rem;
+    margin: 0;
+    text-align: center;
+    font-weight: 700;
+  }
+  #main {
+    flex: 1;
+    padding: 30px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+  h2 {
+    color: #2f4f2f;
+    margin-bottom: 15px;
+  }
+  label {
+    font-weight: 600;
+    margin-top: 10px;
+  }
+  select, input[type="password"], input[type="text"], button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 2px solid #3a6b35;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+  button {
+    background: #3a6b35;
+    color: #d0f0c0;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.3s ease;
+    font-weight: 700;
+  }
+  button:hover:not(:disabled) {
+    background: #275022;
+  }
+  button:disabled {
+    background: #a4bba0;
+    cursor: not-allowed;
+  }
+  #attendanceInfo {
+    margin-top: 20px;
+    padding: 15px;
+    background: #d0f0c0aa;
+    border-radius: 8px;
+    color: #27491a;
+    font-weight: 600;
+  }
+  #adminPanel {
+    margin-top: 30px;
+    border-top: 2px solid #3a6b35;
+    padding-top: 20px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th, td {
+    border: 1px solid #3a6b35;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  th {
+    background: #3a6b35;
+    color: #d0f0c0;
+  }
+  .location-cell {
+    font-size: 0.85rem;
+    color: #0b3d0b;
+  }
+  .action-btn {
+    padding: 4px 8px;
+    margin: 2px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-radius: 4px;
+    border: none;
+    color: white;
+  }
+  .btn-remove {
+    background: #b22222;
+  }
+  #recordsSection {
+    margin-top: 20px;
+    border-top: 2px solid #3a6b35;
+    padding-top: 20px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h1>Nirakar Attendance</h1>
+</div>
+
+<div id="main">
+
+  <!-- Login screen -->
+  <div id="loginScreen">
+    <h2>User Login</h2>
+    <label for="userPassword">Enter Password</label>
+    <input type="password" id="userPassword" placeholder="Password" autocomplete="off" />
+    <button id="userLoginBtn">Login</button>
+    <div id="loginMsg" style="color:red; margin-top:10px;"></div>
+
+    <hr style="margin: 20px 0;" />
+
+    <h2>Admin Login</h2>
+    <label for="adminPasswordInput">Enter Admin Password</label>
+    <input type="password" id="adminPasswordInput" placeholder="Admin Password" autocomplete="off" />
+    <button id="adminUnlockBtn">Login as Admin</button>
+    <div id="adminUnlockMsg" style="color:red; margin-top:10px;"></div>
+  </div>
+
+  <!-- User attendance screen -->
+  <div id="userScreen" style="display:none;">
+    <h2>Mark Your Attendance</h2>
+    <label for="employeeSelect">Select Your Name</label>
+    <select id="employeeSelect">
+      <option value="">-- Select --</option>
+    </select>
+
+    <button id="checkInBtn" disabled>Check In</button>
+    <button id="checkOutBtn" disabled>Check Out</button>
+
+    <div id="attendanceInfo"></div>
+
+    <button id="logoutUserBtn" style="margin-top:25px; background:#b22222;">Logout</button>
+  </div>
+
+  <!-- Admin screen -->
+  <div id="adminScreen" style="display:none;">
+    <h2>Admin Panel</h2>
+
+    <button id="logoutAdminBtn" style="background:#b22222; margin-bottom: 20px;">Logout Admin</button>
+
+    <h3>Manage Employees</h3>
+    <input type="text" id="newEmployeeName" placeholder="New employee full name" />
+    <button id="addEmployeeBtn">Add Employee</button>
+    <div id="employeeList" style="margin-top:10px;"></div>
+
+    <h3>Attendance Records</h3>
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th>Date<br>(YYYY-MM-DD)</th>
+          <th>Name</th>
+          <th>Check In Time</th>
+          <th>Check In Location</th>
+          <th>Check Out Time</th>
+          <th>Check Out Location</th>
+          <th>Work Hours</th>
+          <th>Distance (km)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="exportBtn">Export CSV</button>
+
+    <button id="viewRecordsBtn" style="margin-top: 30px;">View Past Records</button>
+    <button id="hideRecordsBtn" style="margin-top: 10px; display:none;">Hide Past Records</button>
+
+    <div id="recordsSection">
+      <h3>Past Attendance Records</h3>
+      <table id="recordsTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Check In</th>
+            <th>Check In Location</th>
+            <th>Check Out</th>
+            <th>Check Out Location</th>
+            <th>Work Hours</th>
+            <th>Distance (km)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button id="downloadRecordsCSV" style="margin-top: 10px;">Download Past Records CSV</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Initial employees
+  let employees = [
+    "Rita Dulal",
+    "Padam Kumari Acharya",
+    "Anisha Puri",
+    "Yasoda Basnet",
+    "Anjali Tajpuriya",
+    "Binita Vishwokarma",
+    "Lakpa Diki Sherpa",
+    "Lila Bastola",
+    "Bir ba Nepal"
+  ];
+
+  // Passwords
+  const userPassword = "nirakar123";
+  const adminPassword = "admin123";
+
+  // Elements
+  const loginScreen = document.getElementById("loginScreen");
+  const userScreen = document.getElementById("userScreen");
+  const adminScreen = document.getElementById("adminScreen");
+
+  const userPasswordInput = document.getElementById("userPassword");
+  const userLoginBtn = document.getElementById("userLoginBtn");
+  const loginMsg = document.getElementById("loginMsg");
+
+  const employeeSelect = document.getElementById("employeeSelect");
+  const checkInBtn = document.getElementById("checkInBtn");
+  const checkOutBtn = document.getElementById("checkOutBtn");
+  const attendanceInfo = document.getElementById("attendanceInfo");
+  const logoutUserBtn = document.getElementById("logoutUserBtn");
+
+  const adminPasswordInput = document.getElementById("adminPasswordInput");
+  const adminUnlockBtn = document.getElementById("adminUnlockBtn");
+  const adminUnlockMsg = document.getElementById("adminUnlockMsg");
+  const logoutAdminBtn = document.getElementById("logoutAdminBtn");
+
+  const newEmployeeNameInput = document.getElementById("newEmployeeName");
+  const addEmployeeBtn = document.getElementById("addEmployeeBtn");
+  const employeeListDiv = document.getElementById("employeeList");
+
+  const attendanceTableBody = document.querySelector("#attendanceTable tbody");
+  const exportBtn = document.getElementById("exportBtn");
+
+  const viewRecordsBtn = document.getElementById("viewRecordsBtn");
+  const hideRecordsBtn = document.getElementById("hideRecordsBtn");
+  const recordsSection = document.getElementById("recordsSection");
+  const recordsTableBody = document.querySelector("#recordsTable tbody");
+  const downloadRecordsCSVBtn = document.getElementById("downloadRecordsCSV");
+
+  // Helper functions
+  function getTodayDate() {
+    return new Date().toISOString().split('T')[0];
+  }
+  function getCurrentTime24() {
+    const d = new Date();
+    let h = d.getHours();
+    let m = d.getMinutes();
+    if (h < 10) h = '0' + h;
+    if (m < 10) m = '0' + m;
+    return `${h}:${m}`;
+  }
+  function getDayOfWeek(dateStr) {
+    return new Date(dateStr).getDay();
+  }
+
+  // Calculate distance using Haversine formula (returns km)
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return +(R * c).toFixed(3);
+  }
+
+  // Calculate work hours between HH:MM strings, returns string like "6h 30m"
+  function calculateWorkHours(checkInTime, checkOutTime) {
+    if (!checkInTime || !checkOutTime) return '-';
+    const [inH, inM] = checkInTime.split(':').map(Number);
+    const [outH, outM] = checkOutTime.split(':').map(Number);
+    let diffMins = (outH * 60 + outM) - (inH * 60 + inM);
+    if (diffMins < 0) diffMins += 24*60; // handle overnight shifts
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `${hours}h ${mins}m`;
+  }
+
+  // LocalStorage keys
+  const ATTENDANCE_KEY = "nirakar_attendance_records";
+  const EMPLOYEE_KEY = "nirakar_employees";
+  const DEVICE_ID_KEY = "nirakar_device_id";
+
+  // Device fingerprint - generate and save unique ID for this browser
+  function getDeviceId() {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      id = 'dev-' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  }
+  const deviceId = getDeviceId();
+
+  // Load/save employees
+  function loadEmployees() {
+    const raw = localStorage.getItem(EMPLOYEE_KEY);
+    if (!raw) return employees.slice();
+    try {
+      const emp = JSON.parse(raw);
+      if (Array.isArray(emp)) return emp;
+      return employees.slice();
+    } catch {
+      return employees.slice();
+    }
+  }
+  function saveEmployees(empList) {
+    localStorage.setItem(EMPLOYEE_KEY, JSON.stringify(empList));
+  }
+
+  // Load/save attendance records
+  // Structure: { date: { name: { checkIn, checkInLoc, checkInCoords, checkOut, checkOutLoc, checkOutCoords, deviceId, workHours, distance } } }
+  function loadAttendanceRecords() {
+    const raw = localStorage.getItem(ATTENDANCE_KEY);
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }
+  function saveAttendanceRecords(records) {
+    localStorage.setItem(ATTENDANCE_KEY, JSON.stringify(records));
+  }
+
+  // Fill employee dropdown for user
+  function fillEmployeeDropdown() {
+    employeeSelect.innerHTML = '<option value="">-- Select --</option>';
+    employees.forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      employeeSelect.appendChild(opt);
+    });
+  }
+
+  // Update buttons and attendance info for user
+  async function updateButtonsAndInfo(name) {
+    if (!name) {
+      checkInBtn.disabled = true;
+      checkOutBtn.disabled = true;
+      attendanceInfo.textContent = "";
+      return;
+    }
+    const records = loadAttendanceRecords();
+    const today = getTodayDate();
+
+    // Disable attendance on Saturday (6)
+    if (getDayOfWeek(today) === 6) {
+      attendanceInfo.textContent = "Today is Saturday (Holiday). Attendance cannot be marked.";
+      checkInBtn.disabled = true;
+      checkOutBtn.disabled = true;
+      return;
+    }
+
+    const todayRecords = records[today] || {};
+    const userRecord = todayRecords[name] || {};
+
+    // Check if user already checked in/out using this device today
+    // Prevent multiple check-ins/outs from same device (different users can check in separately)
+    let deviceUsedForCheckIn = false;
+    let deviceUsedForCheckOut = false;
+    for (const person in todayRecords) {
+      if (todayRecords[person].deviceId === deviceId) {
+        if (todayRecords[person].checkIn) deviceUsedForCheckIn = true;
+        if (todayRecords[person].checkOut) deviceUsedForCheckOut = true;
+      }
+    }
+
+    checkInBtn.disabled = !!userRecord.checkIn || deviceUsedForCheckIn;
+    checkOutBtn.disabled = !userRecord.checkIn || !!userRecord.checkOut || deviceUsedForCheckOut;
+
+    // Show attendance info
+    let info = "";
+    if (userRecord.checkIn) {
+      info += `Checked In at ${userRecord.checkIn} (Location: ${userRecord.checkInLoc || "N/A"})\n`;
+    }
+    if (userRecord.checkOut) {
+      info += `Checked Out at ${userRecord.checkOut} (Location: ${userRecord.checkOutLoc || "N/A"})\n`;
+    }
+    if (userRecord.workHours) {
+      info += `Total Work Hours: ${userRecord.workHours}\n`;
+    }
+    if (userRecord.distance !== undefined) {
+      info += `Total Distance Covered: ${userRecord.distance} km\n`;
+    }
+    attendanceInfo.textContent = info.trim();
+  }
+
+  // Get location helper returns Promise<string> and coordinates object
+  function getLocation() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ locStr: "Location not supported", coords: null });
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(pos => {
+        resolve({
+          locStr: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`,
+          coords: { lat: pos.coords.latitude, lon: pos.coords.longitude }
+        });
+      }, () => {
+        resolve({ locStr: "Location not provided", coords: null });
+      }, {timeout: 10000});
+    });
+  }
+
+  // Check-in handler
+  checkInBtn.onclick = async () => {
+    const name = employeeSelect.value;
+    if (!name) return alert("Select your name!");
+    const today = getTodayDate();
+
+    if (getDayOfWeek(today) === 6) {
+      alert("Today is Saturday (Holiday). Attendance not allowed.");
+      return;
+    }
+
+    const time = getCurrentTime24();
+    const { locStr, coords } = await getLocation();
+
+    const records = loadAttendanceRecords();
+    records[today] = records[today] || {};
+
+    // Check if this device already checked in today
+    for (const person in records[today]) {
+      if (records[today][person].deviceId === deviceId && records[today][person].checkIn) {
+        alert("This device has already checked in today.");
+        updateButtonsAndInfo(name);
+        return;
+      }
+    }
+
+    if (records[today][name]?.checkIn) {
+      alert("You already checked in today.");
+      updateButtonsAndInfo(name);
+      return;
+    }
+
+    records[today][name] = records[today][name] || {};
+    records[today][name].checkIn = time;
+    records[today][name].checkInLoc = locStr;
+    records[today][name].checkInCoords = coords;
+    records[today][name].deviceId = deviceId;
+
+    saveAttendanceRecords(records);
+    alert(`Checked In at ${time} Location: ${locStr}`);
+    updateButtonsAndInfo(name);
+  };
+
+  // Check-out handler
+  checkOutBtn.onclick = async () => {
+    const name = employeeSelect.value;
+    if (!name) return alert("Select your name!");
+    const today = getTodayDate();
+
+    if (getDayOfWeek(today) === 6) {
+      alert("Today is Saturday (Holiday). Attendance not allowed.");
+      return;
+    }
+
+    const time = getCurrentTime24();
+    const { locStr, coords } = await getLocation();
+
+    const records = loadAttendanceRecords();
+    if (!records[today] || !records[today][name] || !records[today][name].checkIn) {
+      alert("You must check in first.");
+      updateButtonsAndInfo(name);
+      return;
+    }
+
+    // Check if device already checked out today
+    for (const person in records[today]) {
+      if (records[today][person].deviceId === deviceId && records[today][person].checkOut) {
+        alert("This device has already checked out today.");
+        updateButtonsAndInfo(name);
+        return;
+      }
+    }
+
+    if (records[today][name].checkOut) {
+      alert("You already checked out today.");
+      updateButtonsAndInfo(name);
+      return;
+    }
+
+    records[today][name].checkOut = time;
+    records[today][name].checkOutLoc = locStr;
+    records[today][name].checkOutCoords = coords;
+
+    // Calculate work hours
+    records[today][name].workHours = calculateWorkHours(records[today][name].checkIn, time);
+
+    // Calculate distance if both locations available
+    const ci = records[today][name].checkInCoords;
+    const co = records[today][name].checkOutCoords;
+    if (ci && co) {
+      records[today][name].distance = calculateDistance(ci.lat, ci.lon, co.lat, co.lon);
+    } else {
+      records[today][name].distance = 0;
+    }
+
+    saveAttendanceRecords(records);
+    alert(`Checked Out at ${time} Location: ${locStr}`);
+    updateButtonsAndInfo(name);
+  };
+
+  // User login
+  userLoginBtn.onclick = () => {
+    if (userPasswordInput.value === userPassword) {
+      employees = loadEmployees();
+      fillEmployeeDropdown();
+      loginScreen.style.display = "none";
+      userScreen.style.display = "block";
+      adminScreen.style.display = "none";
+      loginMsg.textContent = "";
+      userPasswordInput.value = "";
+    } else {
+      loginMsg.textContent = "Incorrect password.";
+    }
+  };
+
+  // User logout
+  logoutUserBtn.onclick = () => {
+    userScreen.style.display = "none";
+    loginScreen.style.display = "block";
+    attendanceInfo.textContent = "";
+    employeeSelect.value = "";
+  };
+
+  // Employee select change
+  employeeSelect.onchange = () => {
+    updateButtonsAndInfo(employeeSelect.value);
+  };
+
+  // Admin login
+  adminUnlockBtn.onclick = () => {
+    if (adminPasswordInput.value === adminPassword) {
+      employees = loadEmployees();
+      fillEmployeeList();
+      renderAttendanceTable();
+      loginScreen.style.display = "none";
+      userScreen.style.display = "none";
+      adminScreen.style.display = "block";
+      adminUnlockMsg.textContent = "";
+      adminPasswordInput.value = "";
+    } else {
+      adminUnlockMsg.textContent = "Incorrect admin password.";
+    }
+  };
+
+  // Admin logout
+  logoutAdminBtn.onclick = () => {
+    adminScreen.style.display = "none";
+    loginScreen.style.display = "block";
+  };
+
+  // Add employee
+  addEmployeeBtn.onclick = () => {
+    const newName = newEmployeeNameInput.value.trim();
+    if (!newName) return alert("Enter a valid employee name.");
+    if (employees.includes(newName)) return alert("Employee already exists.");
+    employees.push(newName);
+    saveEmployees(employees);
+    newEmployeeNameInput.value = "";
+    fillEmployeeList();
+    fillEmployeeDropdown();
+  };
+
+  // Fill employee list in admin panel
+  function fillEmployeeList() {
+    employeeListDiv.innerHTML = "";
+    if (employees.length === 0) {
+      employeeListDiv.textContent = "No employees added.";
+      return;
+    }
+    employees.forEach((name, idx) => {
+      const div = document.createElement("div");
+      div.style.display = "flex";
+      div.style.justifyContent = "space-between";
+      div.style.marginBottom = "6px";
+      div.textContent = name;
+      const btn = document.createElement("button");
+      btn.textContent = "Remove";
+      btn.className = "action-btn btn-remove";
+      btn.onclick = () => {
+        if (confirm(`Remove employee "${name}"? This will NOT remove attendance records.`)) {
+          employees.splice(idx, 1);
+          saveEmployees(employees);
+          fillEmployeeList();
+          fillEmployeeDropdown();
+        }
+      };
+      div.appendChild(btn);
+      employeeListDiv.appendChild(div);
+    });
+  }
+
+  // Render attendance table for today
+  function renderAttendanceTable() {
+    const records = loadAttendanceRecords();
+    const today = getTodayDate();
+    const todayRecords = records[today] || {};
+    attendanceTableBody.innerHTML = "";
+    // Sort by name
+    const sortedNames = Object.keys(todayRecords).sort((a,b)=>a.localeCompare(b));
+    sortedNames.forEach(name => {
+      const rec = todayRecords[name];
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${today}</td>
+        <td>${name}</td>
+        <td>${rec.checkIn || '-'}</td>
+        <td class="location-cell">${rec.checkInLoc || '-'}</td>
+        <td>${rec.checkOut || '-'}</td>
+        <td class="location-cell">${rec.checkOutLoc || '-'}</td>
+        <td>${rec.workHours || '-'}</td>
+        <td>${rec.distance !== undefined ? rec.distance : '-'}</td>
+        <td><button class="action-btn btn-remove" data-name="${name}">Remove</button></td>
+      `;
+      attendanceTableBody.appendChild(tr);
+    });
+
+    // Remove buttons handler
+    attendanceTableBody.querySelectorAll("button.btn-remove").forEach(btn => {
+      btn.onclick = () => {
+        const nm = btn.getAttribute("data-name");
+        if (!nm) return;
+        if (confirm(`Remove today's attendance record for "${nm}"?`)) {
+          delete records[today][nm];
+          saveAttendanceRecords(records);
+          renderAttendanceTable();
+        }
+      };
+    });
+  }
+
+  // Export CSV for today's attendance
+  exportBtn.onclick = () => {
+    const records = loadAttendanceRecords();
+    const today = getTodayDate();
+    const todayRecords = records[today] || {};
+    let csv = "Date,Name,Check In Time,Check In Location,Check Out Time,Check Out Location,Work Hours,Distance (km)\n";
+    for (const name in todayRecords) {
+      const r = todayRecords[name];
+      csv += `"${today}","${name}","${r.checkIn || ''}","${r.checkInLoc || ''}","${r.checkOut || ''}","${r.checkOutLoc || ''}","${r.workHours || ''}","${r.distance !== undefined ? r.distance : ''}"\n`;
+    }
+    downloadCSV(csv, `attendance_${today}.csv`);
+  };
+
+  // View and hide past records section
+  viewRecordsBtn.onclick = () => {
+    recordsSection.style.display = "block";
+    viewRecordsBtn.style.display = "none";
+    hideRecordsBtn.style.display = "inline-block";
+    renderPastRecordsTable();
+  };
+  hideRecordsBtn.onclick = () => {
+    recordsSection.style.display = "none";
+    viewRecordsBtn.style.display = "inline-block";
+    hideRecordsBtn.style.display = "none";
+  };
+
+  // Render past attendance records (all but today)
+  function renderPastRecordsTable() {
+    const records = loadAttendanceRecords();
+    recordsTableBody.innerHTML = "";
+    const today = getTodayDate();
+    const dates = Object.keys(records).filter(d => d !== today).sort().reverse();
+
+    dates.forEach(date => {
+      const recs = records[date];
+      for (const name in recs) {
+        const r = recs[name];
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${date}</td>
+          <td>${name}</td>
+          <td>${r.checkIn || '-'}</td>
+          <td class="location-cell">${r.checkInLoc || '-'}</td>
+          <td>${r.checkOut || '-'}</td>
+          <td class="location-cell">${r.checkOutLoc || '-'}</td>
+          <td>${r.workHours || '-'}</td>
+          <td>${r.distance !== undefined ? r.distance : '-'}</td>
+        `;
+        recordsTableBody.appendChild(tr);
+      }
+    });
+    if(recordsTableBody.children.length === 0){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="8">No past records found.</td>`;
+      recordsTableBody.appendChild(tr);
+    }
+  }
+
+  // Download past records CSV
+  downloadRecordsCSVBtn.onclick = () => {
+    const records = loadAttendanceRecords();
+    const today = getTodayDate();
+    let csv = "Date,Name,Check In Time,Check In Location,Check Out Time,Check Out Location,Work Hours,Distance (km)\n";
+    const dates = Object.keys(records).filter(d => d !== today).sort();
+
+    dates.forEach(date => {
+      const recs = records[date];
+      for (const name in recs) {
+        const r = recs[name];
+        csv += `"${date}","${name}","${r.checkIn || ''}","${r.checkInLoc || ''}","${r.checkOut || ''}","${r.checkOutLoc || ''}","${r.workHours || ''}","${r.distance !== undefined ? r.distance : ''}"\n`;
+      }
+    });
+
+    if(csv === "Date,Name,Check In Time,Check In Location,Check Out Time,Check Out Location,Work Hours,Distance (km)\n"){
+      alert("No past records to export.");
+      return;
+    }
+
+    downloadCSV(csv, `attendance_past_records.csv`);
+  };
+
+  // CSV download helper
+  function downloadCSV(content, filename) {
+    const blob = new Blob([content], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // On page load
+  window.onload = () => {
+    employees = loadEmployees();
+    fillEmployeeDropdown();
+  };
+</script>
+
+</body>
+</html>
